@@ -8,8 +8,6 @@ class comPortSplitter:
      и переотправки данных подключенным к нему клиентов (Clients).
      По сути, выполняет роль сплиттера - COM > USB > CPS > Clients. """
     def __init__(self, ip, port):
-        self.scale_ip = ip
-        self.scale_port = port
         self.create_server(ip, port)
         self.allConnections = []
         threading.Thread(target=self.connReciever, args=()).start()
@@ -18,7 +16,7 @@ class comPortSplitter:
     def create_server(self, ip, port):
         # Создает сервер
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.serv.bind(ip, port)
+        self.serv.bind((ip, port))
         self.serv.listen(10)
 
     def connReciever(self):
@@ -37,7 +35,7 @@ class comPortSplitter:
             print('\nWaiting data from port.')
             data = ser.readline()
             ser.close()
-            print('\tGot data from port')
+            print('\tGot data from port:', data)
             if len(str(data)) < 4:
                 data = b'too short msg'
             for conn in self.allConnections:
@@ -47,3 +45,5 @@ class comPortSplitter:
                 except:
                     print('Failed to send data to client')
                     self.allConnections.remove(conn)
+                    
+cps = comPortSplitter('192.168.100.33', 33982)
