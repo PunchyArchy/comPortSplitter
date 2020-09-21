@@ -34,6 +34,7 @@ class comPortSplitter:
             ser = Serial('COM1', bytesize=8, parity='N', stopbits=1, timeout=1)
             print('\nWaiting data from port.')
             data = ser.readline()
+            #data = data.decode()
             ser.close()
             print('\tGot data from port:', data)
             if len(str(data)) < 4:
@@ -46,4 +47,4 @@ class comPortSplitter:
                     print('Failed to send data to client')
                     self.allConnections.remove(conn)
                     
-cps = comPortSplitter('192.168.100.33', 33982)
+cps = comPortSplitter('192.168.100.33', 2297)
