@@ -1,7 +1,10 @@
 import socket
 import threading
 from serial import Serial
-
+import serial.tools.list_ports
+from time import sleep
+import logging
+#ports = serial.tools.list_ports.comports()
 
 class comPortSplitter:
     """ Сервер для прослушивания порта USB (CPS), к которому подключено устройство с COM-портом через адаптер
@@ -10,12 +13,16 @@ class comPortSplitter:
     def __init__(self, ip, port):
         self.create_server(ip, port)
         self.allConnections = []
+
+    def start(self):
         threading.Thread(target=self.connReciever, args=()).start()
         self._mainloop()
 
     def create_server(self, ip, port):
         # Создает сервер
+        print('Creating CPS server')
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.serv.bind((ip, port))
         self.serv.listen(10)
 
@@ -30,21 +37,27 @@ class comPortSplitter:
 
     def _mainloop(self):
         # Основной цикл работы программы, слушает порт и передает данные клиентам
+        print('Запущен основной цикл отправки весов')
+        sleep(5)
+        ser = Serial('/dev/ttyUSB0', bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
         while True:
-            ser = Serial('COM1', bytesize=8, parity='N', stopbits=1, timeout=1)
-            print('\nWaiting data from port.')
-            data = ser.readline()
-            #data = data.decode()
-            ser.close()
-            print('\tGot data from port:', data)
-            if len(str(data)) < 4:
-                data = b'too short msg'
-            for conn in self.allConnections:
-                try:
-                    conn.send(data)
-                    print('Sent to the client with success')
-                except:
-                    print('Failed to send data to client')
-                    self.allConnections.remove(conn)
-                    
-cps = comPortSplitter('192.168.100.33', 2297)
+            try:
+                #ser = Serial('/dev/ttyUSB0', bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
+                data = ser.readline()
+                #print('GOT DATA - ', data)
+                #sleep(0.5)
+                #ser.close()
+                #sleep(1)
+                if len(str(data)) < 4:
+                    data = b'too short msg'
+                for conn in self.allConnections:
+                    try:
+                        conn.send(data)
+                        #print('Sent to the client with success')
+                    except:
+                        print('Failed to send weight to client')
+                        self.allConnections.remove(conn)
+            except:
+                logging.error(format_exc())
+                print(format_exc())
+#cps = comPortSplitter('192.168.100.109', 2297)
