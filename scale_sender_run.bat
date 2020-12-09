@@ -1,0 +1,1 @@
+python "C:/scale_sender.py"
