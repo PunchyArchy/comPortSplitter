@@ -41,23 +41,29 @@ class comPortSplitter:
         sleep(5)
         ser = Serial('/dev/ttyUSB0', bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
         while True:
+            data = ser.readline()
+            data = self.check_data(data)
+            self.send_data(data)
+           
+    def check_data(self, data):
+        if check_scale_disconnected(data):
+            data = '17'
+        return data
+
+    def check_scale_disconnected(self, data):
+        data = data.decode()
+        if 'x00' in data:
+            print('Terminal has been disconnected')
+            return True
+
+    def scale_disconnect_act():
+        
+    def send_data(self, data, **kwargs):
+        for conn in self.allConnections:
             try:
-                #ser = Serial('/dev/ttyUSB0', bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
-                data = ser.readline()
-                #print('GOT DATA - ', data)
-                #sleep(0.5)
-                #ser.close()
-                #sleep(1)
-                if len(str(data)) < 4:
-                    data = b'too short msg'
-                for conn in self.allConnections:
-                    try:
-                        conn.send(data)
-                        #print('Sent to the client with success')
-                    except:
-                        print('Failed to send weight to client')
-                        self.allConnections.remove(conn)
+                conn.send(data)
+                #print('Sent to the client with success')
             except:
-                logging.error(format_exc())
-                print(format_exc())
+                print('Failed to send weight to client')
+                self.allConnections.remove(conn)
 #cps = comPortSplitter('192.168.100.109', 2297)
