@@ -4,6 +4,7 @@ from serial import Serial
 import serial.tools.list_ports
 from time import sleep
 import logging
+from terminal_parsers import *
 #ports = serial.tools.list_ports.comports()
 
 class comPortSplitter:
@@ -42,12 +43,15 @@ class comPortSplitter:
         ser = Serial('/dev/ttyUSB0', bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
         while True:
             data = ser.readline()
-            #data = self.check_data(data)
+            data = self.check_data(data)
             self.send_data(data)
            
     def check_data(self, data):
         if self.check_scale_disconnected(data):
             data = '17'
+        else:
+            data = parse_data_cas(data)
+            print('Получены данные после парсинга:', data)
         return data
 
     def check_scale_disconnected(self, data):
@@ -56,7 +60,7 @@ class comPortSplitter:
             print('Terminal has been disconnected')
             return True
 
-    def scale_disconnect_act():
+    def scale_disconnect_act(self):
         pass
 
     def send_data(self, data, **kwargs):
@@ -67,4 +71,5 @@ class comPortSplitter:
             except:
                 print('Failed to send weight to client')
                 self.allConnections.remove(conn)
-#cps = comPortSplitter('192.168.100.109', 2297)
+
+>>>>>>> 70283a39bc59e0abae1c8e847bf560954d5caaa5

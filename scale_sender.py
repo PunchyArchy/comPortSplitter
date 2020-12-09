@@ -70,5 +70,4 @@ class Tcp_Sender():
 				sleep(3)
 				print('Error.. Retrying in 3 seconds..')
 
-prg = Tcp_Sender()
-prg.launch_operate()
+
