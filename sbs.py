@@ -4,8 +4,10 @@ from serial import Serial
 import serial.tools.list_ports
 from time import sleep
 import logging
-from terminal_parsers import *
+#from terminal_parsers import *
 #ports = serial.tools.list_ports.comports()
+import tp
+#import terminal_parsers as tp
 
 class comPortSplitter:
     """ Сервер для прослушивания порта USB (CPS), к которому подключено устройство с COM-портом через адаптер
@@ -72,4 +74,3 @@ class comPortSplitter:
                 print('Failed to send weight to client')
                 self.allConnections.remove(conn)
 
->>>>>>> 70283a39bc59e0abae1c8e847bf560954d5caaa5
