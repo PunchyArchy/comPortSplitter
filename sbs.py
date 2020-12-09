@@ -42,11 +42,11 @@ class comPortSplitter:
         ser = Serial('/dev/ttyUSB0', bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
         while True:
             data = ser.readline()
-            data = self.check_data(data)
+            #data = self.check_data(data)
             self.send_data(data)
            
     def check_data(self, data):
-        if check_scale_disconnected(data):
+        if self.check_scale_disconnected(data):
             data = '17'
         return data
 
@@ -57,7 +57,8 @@ class comPortSplitter:
             return True
 
     def scale_disconnect_act():
-        
+        pass
+
     def send_data(self, data, **kwargs):
         for conn in self.allConnections:
             try:
