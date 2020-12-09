@@ -71,4 +71,4 @@ class comPortSplitter:
             except:
                 print('Failed to send weight to client')
                 self.allConnections.remove(conn)
-#cps = comPortSplitter('192.168.100.109', 2297)
+
