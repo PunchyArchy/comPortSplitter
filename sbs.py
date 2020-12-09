@@ -6,7 +6,7 @@ from time import sleep
 import logging
 #from terminal_parsers import *
 #ports = serial.tools.list_ports.comports()
-import tp
+#import tp
 #import terminal_parsers as tp
 
 class comPortSplitter:
@@ -47,13 +47,22 @@ class comPortSplitter:
             data = ser.readline()
             data = self.check_data(data)
             self.send_data(data)
+
+    def parse_data_cas(self, data):
+        #data_str = data.decode()
+        data_els = data_str.split(',')
+        data_kg = data_els[3]
+        data_kg_els = data_kg.split(' ')
+        kg = data_kg_els[0]
+        return kg
+
            
     def check_data(self, data):
-        if self.check_scale_disconnected(data):
-            data = '17'
-        else:
-            data = parse_data_cas(data)
-            print('Получены данные после парсинга:', data)
+        #if self.check_scale_disconnected(data):
+        #    data = '17'
+        #else:
+        data = self.parse_data_cas(data)
+        print('Получены данные после парсинга:', data)
         return data
 
     def check_scale_disconnected(self, data):
