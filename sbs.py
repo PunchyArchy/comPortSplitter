@@ -112,8 +112,9 @@ class WeightSplitter(comPortSplitter):
         super().send_data(data, **kwargs)
 
     def sending_thread(self, timing=1):
-        sleep(timing)
-        self.send_data(self.smlist[-1])
+        while True:
+            sleep(timing)
+            self.send_data(self.smlist[-1])
 
     def _mainloop(self):
         # Основной цикл работы программы, слушает порт и передает данные клиентам
