@@ -13,7 +13,8 @@ class comPortSplitter:
     """ Сервер для прослушивания порта USB (CPS), к которому подключено устройство с COM-портом через адаптер
      и переотправки данных подключенным к нему клиентов (Clients).
      По сути, выполняет роль сплиттера - COM > USB > CPS > Clients. """
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, port_name='/dev/ttyUSB0', terminal_name='CAS'):
+        self.port_name = port_name
         self.create_server(ip, port)
         self.allConnections = []
 
@@ -41,41 +42,28 @@ class comPortSplitter:
     def _mainloop(self):
         # Основной цикл работы программы, слушает порт и передает данные клиентам
         print('Запущен основной цикл отправки весов')
-        #sleep(5)
-        ser = Serial('/dev/ttyUSB0', bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
+        ser = Serial(self.port_name, bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
         while True:
             data = ser.readline()
-            #self.send_data(data)
-            #data = self.check_data(data)
             self.send_data(data)
-            #if data:
-                 #print('TRACK. Sending', data)
-            #     self.send_data(bytes(data, encoding='utf-8'))
 
     def parse_data_cas(self, data):
-        #data_str = data
-        #print(type(data))
-       # print('data', data)
         data = str(data) #.decode()
         try:
             data_els = data.split(',')
-        #    print('data els', data_els, 'len', len(data_els))
             data_kg = data_els[3]
-         #   print(data_kg)
             data_kg_els = data_kg.split(' ')
-          #  print('data_kg_els', data_kg_els, 'len', len(data_kg_els))
             kg = data_kg_els[7]
             return kg
         except:
             return False
 
            
-    def check_data(self, data):
+    def check_data(self, data, parser_func):
         if self.check_scale_disconnected(data):
             data = '17'
         else:
-            data = self.parse_data_cas(data)
-        #print('Получены данные после парсинга:', data)
+            data = parser_func(data)
         return data
 
     def check_scale_disconnected(self, data):
@@ -97,58 +85,42 @@ class comPortSplitter:
                 self.allConnections.remove(conn)
 
 class WeightSplitter(comPortSplitter):
-    def __init__(self, ip, port):
-        comPortSplitter.__init__(self, ip, port)
+    def __init__(self, ip, port, port_name='/dev/ttyUSB0', terminal_name='CAS'):
+        super().__init__(ip, port, port_name, terminal_name)
+        self.parser_func = self.define_parser(terminal_name)
+
+    def define_parser(self, terminal_name):
+        if terminal_name == 'CAS':
+            return self.parse_data_cas
 
     def parse_data_cas(self, data):
-        #data_str = data
-        #print(type(data))
-       # print('data', data)
-        data = str(data) #.decode()
+        data = str(data)
         try:
             data_els = data.split(',')
-          #  print('data els', data_els, 'len', len(data_els))
-            #data_kg = data_els[3]
-         #   print(data_kg)
-            #data_kg_els = data_kg.split(' ')
-          #  print('data_kg_els', data_kg_els, 'len', len(data_kg_els))
-            #kg = data_kg_els[7]
-            #if 'kg' in kg:
-            #    kg = data_kg_els[6]
             for el in data_els:
-                #print(el)
                 if 'kg' in el:
-                    ela = el.split(' ')
-                    for el in ela:
-                        if el.isdigit():
-                            print(el)
-                            return el
-                #if 'kg' in el:
-                 #   el = el.split(' ')
-                 #   print('el1', el)
-                 #   kg = el[-2]
-                 #   print('kg', kg)
-                 #   return kg
+                    kg_els = el.split(' ')
+                    for element in kg_els:
+                        if element.isdigit():
+                            return element
         except:
-            return False
+            return 4
+
+    def send_data(self, data, **kwargs):
+        data = bytes(data, encoding='utf-8')
+        super().send_data(data, **kwargs)
 
     def _mainloop(self):
         # Основной цикл работы программы, слушает порт и передает данные клиентам
         print('Запущен основной цикл отправки весов')
-        #sleep(5)
-        ser = Serial('/dev/ttyUSB0', bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
+        sleep(5)
+        ser = Serial(self.port_name, bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
         while True:
             data = ser.readline()
-            #self.send_data(data)
-            data = self.check_data(data)
-            #print(data)
-            #self.send_data(data)
+            data = self.check_data(data, self.parser_func)
             if data:
-                 #print('TRACK. Sending', data)
-                 self.send_data(bytes(data, encoding='utf-8'))
-                 sleep(1)
+                 self.send_data(data)
 
 if __name__ == '__main__':
     cps = WeightSplitter('localhost', 1488)
-    cps.create_server('localhost', 1488)
     cps.start()
