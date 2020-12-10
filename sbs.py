@@ -88,6 +88,7 @@ class WeightSplitter(comPortSplitter):
     def __init__(self, ip, port, port_name='/dev/ttyUSB0', terminal_name='CAS'):
         super().__init__(ip, port, port_name, terminal_name)
         self.parser_func = self.define_parser(terminal_name)
+        self.smlist = [1]
 
     def define_parser(self, terminal_name):
         if terminal_name == 'CAS':
@@ -110,16 +111,22 @@ class WeightSplitter(comPortSplitter):
         data = bytes(data, encoding='utf-8')
         super().send_data(data, **kwargs)
 
+    def sending_thread(self, timing=1):
+        sleep(timing)
+        self.send_data(self.smlist[-1])
+
     def _mainloop(self):
         # Основной цикл работы программы, слушает порт и передает данные клиентам
         print('Запущен основной цикл отправки весов')
         sleep(5)
         ser = Serial(self.port_name, bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
+        threading.Thread(target=self.sending_thread, args=(1,)).start()
         while True:
             data = ser.readline()
             data = self.check_data(data, self.parser_func)
-            if data:
-                 self.send_data(data)
+            self.smlist.append(data)
+            #if data:
+            #     self.send_data(data)
 
 if __name__ == '__main__':
     cps = WeightSplitter('localhost', 1488)
