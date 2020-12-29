@@ -88,7 +88,8 @@ class WeightSplitter(comPortSplitter):
     def __init__(self, ip, port, port_name='/dev/ttyUSB0', terminal_name='CAS'):
         super().__init__(ip, port, port_name, terminal_name)
         self.parser_func = self.define_parser(terminal_name)
-        self.smlist = [1]
+        threading.Thread(target=self.sending_thread, args=(1,)).start()
+        self.smlist = ['5']
 
     def define_parser(self, terminal_name):
         if terminal_name == 'CAS':
@@ -105,11 +106,29 @@ class WeightSplitter(comPortSplitter):
                         if element.isdigit():
                             return element
         except:
-            return 4
+            return '4'
 
     def send_data(self, data, **kwargs):
-        data = bytes(data, encoding='utf-8')
-        super().send_data(data, **kwargs)
+        print('sending data', data) 
+        try:
+            data = bytes(data, encoding='utf-8')
+            super().send_data(data, **kwargs)
+        except TypeError:
+            self.reconnect_logic()
+
+    def reconnect_logic(self):
+        print('Терминал выключен!')        
+        self.port.close()
+        self._mainloop()
+
+
+    def check_send_data(self):
+        print('checking data')
+        data = self.smlist[-1]
+        if data != None:
+            return data
+        else:
+            return '0'
 
     def sending_thread(self, timing=1):
         while True:
@@ -120,14 +139,15 @@ class WeightSplitter(comPortSplitter):
         # Основной цикл работы программы, слушает порт и передает данные клиентам
         print('Запущен основной цикл отправки весов')
         sleep(5)
-        ser = Serial(self.port_name, bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
-        threading.Thread(target=self.sending_thread, args=(1,)).start()
+        self.port = Serial(self.port_name, bytesize=8, parity='N', stopbits=1, timeout=1, baudrate=9600)
         while True:
-            data = ser.readline()
-            data = self.check_data(data, self.parser_func)
-            self.smlist.append(data)
-            #if data:
-            #     self.send_data(data)
+            data = self.port.readline()
+            #print('data -', data)
+            if data:
+                data = self.check_data(data, self.parser_func)
+                self.smlist.append(data)
+            else:
+                 self.reconnect_logic()
 
 if __name__ == '__main__':
     cps = WeightSplitter('localhost', 1488)
