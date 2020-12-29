@@ -3,6 +3,8 @@ import threading
 from serial import Serial
 import serial.tools.list_ports
 from time import sleep
+from traceback import format_exc
+
 import logging
 #from terminal_parsers import *
 #ports = serial.tools.list_ports.comports()
@@ -145,9 +147,38 @@ class WeightSplitter(comPortSplitter):
             #print('data -', data)
             if data:
                 data = self.check_data(data, self.parser_func)
-                self.smlist.append(data)
+                self.prepare_data_to_send(data)
             else:
                  self.reconnect_logic()
+
+    def prepare_data_to_send(self, data):
+        self.smlist.append(data)
+
+
+class HermesSplitter(WeightSplitter):
+    def __init__(self, ip, port, port_name='/dev/ttyUSB0', terminal_name='CAS'):
+        super().__init__(ip, port)
+        self.active = False
+        self.kf = 0
+
+    def set_kf(self, kf):
+        self.kf = kf
+
+    def set_status(self, status):
+        self.status = status
+
+    def prepare_data_to_send(self, data):
+        print('PREPARING DATA TO SEND')
+        try:
+            data = int(data)
+        except:
+            print(format_exc())
+        if self.active and type(data) == int:
+            print('It`s active! KF', self.kf)
+            data = data * self.kf
+            print('New data', data)
+        print('Old data', data)
+        self.smlist.append(data)
 
 if __name__ == '__main__':
     cps = WeightSplitter('localhost', 1488)
