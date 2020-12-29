@@ -60,7 +60,11 @@ class comPortSplitter:
         except:
             return False
 
-           
+    def make_data_aliquot(self, data):
+        data = int(data)
+        data = data - (data % 10)
+        return data
+ 
     def check_data(self, data, parser_func):
         if self.check_scale_disconnected(data):
             data = '17'
@@ -176,6 +180,7 @@ class HermesSplitter(WeightSplitter):
         if self.active and type(data) == int:
             print('It`s active! KF', self.kf)
             data = data * self.kf
+            data = self.make_data_aliquot(data)
             print('New data', data)
         print('Old data', data)
         self.smlist.append(data)
