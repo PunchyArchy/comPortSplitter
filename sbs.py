@@ -160,12 +160,20 @@ class HermesSplitter(WeightSplitter):
         super().__init__(ip, port)
         self.active = False
         self.kf = 0
+        self.avg_tara = 0
 
     def set_kf(self, kf):
         self.kf = kf
 
     def set_status(self, status):
         self.status = status
+
+    def set_avg_tara(self, avg_tara):
+        try:
+            self.avg_tara = int(avg_tara)
+        except:
+            print(self.avg_tara, '-  ЭТО НЕ ЧИСЛО')
+            self.avg_tara = 0
 
     def prepare_data_to_send(self, data):
         print('PREPARING DATA TO SEND')
@@ -175,7 +183,10 @@ class HermesSplitter(WeightSplitter):
             print(format_exc())
         if self.active and type(data) == int:
             print('It`s active! KF', self.kf)
-            data = data * self.kf
+            if data < self.avg_tara:
+                data = data * self.kf
+            else:
+                data = data + (data - self.avg_tara * self.kf)
             print('New data', data)
         print('Old data', data)
         self.smlist.append(data)
