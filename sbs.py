@@ -61,8 +61,10 @@ class comPortSplitter:
             return False
 
     def make_data_aliquot(self, data):
-        data = int(data)
-        data = data - (data % 10)
+        try:
+           data = int(data)
+           data = data - (data % 10)
+        except: print(format_exc())
         return data
  
     def check_data(self, data, parser_func):
@@ -115,7 +117,7 @@ class WeightSplitter(comPortSplitter):
             return '4'
 
     def send_data(self, data, **kwargs):
-        print('sending data', data) 
+        #print('sending data', data) 
         try:
             data = bytes(data, encoding='utf-8')
             super().send_data(data, **kwargs)
@@ -149,6 +151,7 @@ class WeightSplitter(comPortSplitter):
         while True:
             data = self.port.readline()
             #print('data -', data)
+            #data = b'ST,GS,1\xbe,       10000 kg\r\n'
             if data:
                 data = self.check_data(data, self.parser_func)
                 self.prepare_data_to_send(data)
@@ -164,26 +167,47 @@ class HermesSplitter(WeightSplitter):
         super().__init__(ip, port)
         self.active = False
         self.kf = 0
+        self.hermes_weight = 0
 
     def set_kf(self, kf):
-        self.kf = kf
+        print('setting kf', kf)
+        self.kf = 1.0 + kf
 
     def set_status(self, status):
-        self.status = status
+        print('settings status', status)
+        self.active = status
+        if not status:
+            self.hermes_weight = 0
 
     def prepare_data_to_send(self, data):
-        print('PREPARING DATA TO SEND')
-        try:
-            data = int(data)
-        except:
-            print(format_exc())
-        if self.active and type(data) == int:
-            print('It`s active! KF', self.kf)
-            data = data * self.kf
-            data = self.make_data_aliquot(data)
-            print('New data', data)
-        print('Old data', data)
+        #print('PREPARING DATA TO SEND')
+        #try:
+        #    data = int(data)
+        #except:
+        #    print(format_exc())
         self.smlist.append(data)
+
+    def send_data(self, data):
+        data = self.make_magic(data)
+        super().send_data(data)
+
+    def make_magic(self, data):
+        try:
+            if self.active and data.isdigit():
+                print('It`s active! KF', self.kf)
+                print('Increasing. data', data)
+                new_data = float(data) * float(self.kf)
+                new_data = str(self.make_data_aliquot(new_data))
+                print('New data', new_data)
+                print('Old data', data)
+                self.hermes_weight = int(new_data) - int(data)
+            else:
+                new_data = data
+        except: 
+            new_data = data
+            print(format_exc())
+            logging.error(format_exc())
+        return str(new_data)
 
 if __name__ == '__main__':
     cps = WeightSplitter('localhost', 1488)
