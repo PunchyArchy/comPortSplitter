@@ -168,7 +168,6 @@ class HermesSplitter(WeightSplitter):
         self.active = False
         self.kf = 0
         self.hermes_weight = 0
-        self.avg_tara = 0
 
     def set_kf(self, kf):
         print('setting kf', kf)
@@ -179,13 +178,6 @@ class HermesSplitter(WeightSplitter):
         self.active = status
         if not status:
             self.hermes_weight = 0
-
-    def set_avg_tara(self, avg_tara):
-        try:
-            self.avg_tara = int(avg_tara)
-        except:
-            print(self.avg_tara, '-  ЭТО НЕ ЧИСЛО')
-            self.avg_tara = 0
 
     def prepare_data_to_send(self, data):
         #print('PREPARING DATA TO SEND')
@@ -204,11 +196,7 @@ class HermesSplitter(WeightSplitter):
             if self.active and data.isdigit():
                 print('It`s active! KF', self.kf)
                 print('Increasing. data', data)
-                print('avg_tara', self.avg_tara)
-                if float(data) < float(self.avg_tara):
-                    new_data = float(data) * float(self.kf)
-                else:
-                    new_data = float(data) + ((float(data) - float(self.avg_tara)) * self.kf)
+                new_data = float(data) * float(self.kf)
                 new_data = str(self.make_data_aliquot(new_data))
                 print('New data', new_data)
                 print('Old data', data)
