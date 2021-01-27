@@ -169,10 +169,14 @@ class HermesSplitter(WeightSplitter):
         self.kf = 0
         self.hermes_weight = 0
         self.avg_tara = 0
+        self.max_brutto = 0
 
     def set_kf(self, kf):
         print('setting kf', kf)
         self.kf = 1.0 + kf
+
+    def set_debug(self, debug):
+        self.debug = debug
 
     def set_status(self, status):
         print('settings status', status)
@@ -187,6 +191,14 @@ class HermesSplitter(WeightSplitter):
             print(self.avg_tara, '-  ЭТО НЕ ЧИСЛО')
             self.avg_tara = 0
 
+    def set_max_brutto(self, max_brutto):
+        try:
+            self.max_brutto = int(max_brutto)
+        except:
+            print(self.max_brutto, '-  ЭТО НЕ ЧИСЛО')
+            self.max_brutto = 0
+        self.netto_max = self.max_brutto - self.avg_tara
+
     def prepare_data_to_send(self, data):
         #print('PREPARING DATA TO SEND')
         #try:
@@ -199,27 +211,61 @@ class HermesSplitter(WeightSplitter):
         data = self.make_magic(data)
         super().send_data(data)
 
+    def set_avg_weigth(self, weight):
+        try:
+            self.avg_weight = int(weight)
+        except:
+            print(self.avg_weight, '-  ЭТО НЕ ЧИСЛО')
+            self.avg_weight = 0
+
     def make_magic(self, data):
         try:
-            if self.active and data.isdigit():
+            if self.active and data.isdigit() and self.avg_tara != 0 and self.max_brutto != 0 and self.avg_weight != 0:
                 print('It`s active! KF', self.kf)
                 print('Increasing. data', data)
                 print('avg_tara', self.avg_tara)
-                if float(data) < float(self.avg_tara):
-                    new_data = float(data) * float(self.kf)
+                print('avg_weight', self.avg_weight)
+
+                # 3 положение
+                approx_netto = float(data) - float(self.avg_tara)
+                print('approximate netto is', approx_netto)
+                delta_k = approx_netto * float(self.kf) - approx_netto
+                print('new delta_k', delta_k)
+
+                # 1 Положение
+                avg_delta = self.avg_weight * self.kf - self.avg_weight
+                if float(delta_k) > float(avg_delta):
+                    delta_k = float(avg_delta)
+                print('avg_delta', avg_delta)
+
+                # 5 положение
+                if int(delta_k) > 0:
+                    new_data = float(data) + float(delta_k)
                 else:
-                    new_data = float(data) + ((float(data) - float(self.avg_tara)) * self.kf)
+                    new_data = data
+
+                # 2 положение
+                if float(new_data) > float(self.max_brutto):                     # 2 Положение
+                    new_data = data
                 new_data = str(self.make_data_aliquot(new_data))
                 print('New data', new_data)
                 print('Old data', data)
                 self.hermes_weight = int(new_data) - int(data)
+                if self.debug:
+                    new_data = data
             else:
                 new_data = data
-        except: 
+        except:
             new_data = data
             print(format_exc())
-            logging.error(format_exc())
         return str(new_data)
+
+    def make_netto_less(self, added, br_diff, kf):
+        delta_k = added * kf
+        if delta_k > br_diff: #решить с кэфом
+            over = delta_k - br_diff
+            delta_k = delta_k - over * 1.1
+        return delta_k
 
 if __name__ == '__main__':
     cps = WeightSplitter('localhost', 1488)
