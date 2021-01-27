@@ -221,10 +221,13 @@ class HermesSplitter(WeightSplitter):
     def make_magic(self, data):
         try:
             if self.active and data.isdigit() and self.avg_tara != 0 and self.max_brutto != 0 and self.avg_weight != 0:
+                print('self.active', self.active)
+                print('avg_tara', self.avg_tara)
+                print('max_brutto', self.max_brutto)
+                print('avg_weight', self.avg_weight)
+
                 print('It`s active! KF', self.kf)
                 print('Increasing. data', data)
-                print('avg_tara', self.avg_tara)
-                print('avg_weight', self.avg_weight)
 
                 # 3 положение
                 approx_netto = float(data) - float(self.avg_tara)
